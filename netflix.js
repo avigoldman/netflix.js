@@ -15,13 +15,15 @@ function Netflix(jq) {
 		// Constants
 		version: '0.1',
 		// Variables
-		clickable: {},
+		elements: {},
 		// Pages
 		page: {},
 		// Browse
 		browse: {},
 		// Player
-		player: {}
+		player: {
+			_length: -1
+		}
 	};
 
 	// Location
@@ -58,29 +60,93 @@ function Netflix(jq) {
 
 	// Player Controls
 	netflix.player.play = function() {
-		if (netflix.is)
-		if (netflix.player.isPaused())
-			netflix.clickable
+		if (netflix.page.isPlayer()) {
+			if (netflix.player.isPaused()) {
+				netflix.elements.playPauseButton.click();
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
 	};
 
 	netflix.player.pause = function() {
-
+		if (netflix.page.isPlayer()) {
+			if (netflix.player.isPlaying()) {
+				alert('pause');
+				netflix.elements.playPauseButton.click();
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
 	};
 
 	netflix.player.isPlaying = function() {
-
+		if (netflix.page.isPlayer()) {
+			return netflix.elements.playPauseButton.attr('aria-label') == 'Pause';
+		}
 	};
 
 	netflix.player.isPaused = function() {
-
+		return !netflix.player.isPlaying();
 	};
 
 	netflix.player.seek = function(time) {
+		if (netflix.page.isPlayer()) {
+			var x = 369;
+			var y = 587;
+			var eventDetails = {
+				clientX: x,
+				clientY: y,
+				layerX: x,
+				layerY: y,
+				pageX: x,
+				pageY: y,
+				offsetX: x,
+				offsetY: y,
+				x: x,
+				y: y
+			};
+			// var mousedown = new $.Event('mousedown', eventDetails);
+			// var mouseup = new $.Event('mouseup', eventDetails);
+			// var click = new $.Event('click', eventDetails);
+			var mousedown = new MouseEvent('mousedown', eventDetails);
+			var mouseup = new MouseEvent('mouseup', eventDetails);
+			var click = new MouseEvent('click', eventDetails);
+			console.log(mousedown);
+			console.log(mouseup);
+			console.log(click);
 
+			netflix.elements.slider.bar[0].dispatchEvent(mousedown);
+			netflix.elements.slider.bar[0].dispatchEvent(mouseup);
+			netflix.elements.slider.bar[0].dispatchEvent(click);
+			// netflix.elements.slider.bar[0].trigger(mouseup);
+			// netflix.elements.slider.bar[0].trigger(click);
+		}
 	};
 
 	netflix.player.currentTime = function() {
+		var progressCompleted = parseFloat(netflix.elements.slider.progressCompleted.width());
+		var length = netflix.player.getLength();
 
+		return length * progressCompleted/100;
+	};
+
+	netflix.player.getLength = function() {
+		if (netflix.player._length == -1) {
+			var progressCompleted = parseFloat(netflix.elements.slider.progressCompleted.width());
+			var timeLeft = netflix.elements.slider.timeLeft.text();
+
+			           // minute                                                   second
+			timeLeft = parseInt(timeLeft.substring(0, timeLeft.indexOf(':')))*60 + parseInt(timeLeft.substring(timeLeft.indexOf(':')+1));
+
+			netflix.player._length = 1/(((100 - progressCompleted)/100)/timeLeft);
+		}
+		
+		return netflix.player._length;
 	};
 
 	netflix.player.stabilize = function() {
@@ -112,7 +178,7 @@ function Netflix(jq) {
 	};
 
 	netflix.player.toggleFullscreen = function() {
-
+		netflix.elements.fullscreenButton.click();
 	};
 
 
@@ -152,23 +218,27 @@ function Netflix(jq) {
 
 	};
 
-	netflix.player.getLength = function() {
-
-	};
 
 
 
-
-
-	// find all elements
-	if (netflix.isPlayer()) {
-		netflix.clickable = {
-
+	// set up the elements
+	if (netflix.page.isPlayer()) {
+		netflix.elements = {
+			playPauseButton: $('.player-control-button.player-play-pause'),
+			slider: {
+				timeLeft: $('section.player-slider > label'),
+				progressCompleted: $('.player-scrubber-progress-completed'),
+				bar: $('#scrubber-component'),
+			},
+			fullscreenButton: $('.player-control-button.player-fill-screen')
 		};
 	}
 	else {
 
 	}
 
-	return t;
+	return netflix;
 }
+
+n = Netflix();
+n.player.seek(100);
