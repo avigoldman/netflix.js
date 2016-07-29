@@ -164,6 +164,10 @@ function Netflix(jq) {
       volume: {
         bar: $('#player-menu-volume > div > div'),
         button: $('.player-control-button.volume'),
+      },
+      navigation: {
+        backToBrowseButton: $('#netflix-player > a.player-back-to-browsing'),
+        nextEpisodeButton: $('.player-control-button.player-next-episode'),
       }
     };
   };
@@ -269,28 +273,30 @@ function Netflix(jq) {
     return netflix._elements.video.volume;
   };
 
-  netflix.player.stabilize = function() {
-
-  };
-
+  // TODO
   netflix.player.previousEpisode = function() {
 
   };
 
   netflix.player.nextEpisode = function() {
-
+    if (!netflix._elements.navigation.nextEpisodeButton.hasClass('player-hidden')) {
+      netflix._elements.navigation.nextEpisodeButton.click();
+      return true;
+    }
+    return false;
   };
 
   netflix.player.backToBrowse = function() {
-
+    netflix._elements.navigation.backToBrowseButton.click();
   };
 
   netflix.player.isFullscreen = function() {
-
+    return netflix._elements.fullscreenButton.attr('aria-label') == "Exit Fullscreen";
   };
 
   netflix.player.toggleFullscreen = function() {
     netflix._elements.fullscreenButton.click();
+    return netflix.player.isFullscreen();
   };
 
 
