@@ -14,7 +14,14 @@ function Netflix(jq) {
     // Constants
     version: '0.1',
     // Pages
-    page: {},
+    page: {
+      BROWSE: 'browse',
+      PLAYER: 'player',
+      TITLE: 'title',
+      SEARCH: 'search',
+      SETTINGS: 'settings',
+      UNKNOWN: 'unknown'
+    },
     // Util functions
     util: {},
     // Elements
@@ -29,38 +36,55 @@ function Netflix(jq) {
   netflix.setup = function() {
     // set up the elements
     if (netflix.page.isPlayer()) {
-      netflix.player.setup();
+      alert('is player');
+      // netflix.player.setup();
     }
   };
 
   // Location
-  var url = window.location.href;
+  netflix.page._path = window.location.pathname;
+
+  netflix.page.getPage = function() {
+    if(netflix.page._url.indexOf('/browse/') > 0)
+  };
 
   netflix.page.isBrowse = function() {
-    return url.indexOf('/browse/') > 0;
+    return netflix.page._url.indexOf('/browse/') > 0;
   };
   
   netflix.page.isPlayer = function() {
-    return url.indexOf('/watch/') > 0;
+    return netflix.page._url.indexOf('/watch/') > 0;
   };
 
   netflix.page.isTitle = function() {
-    return url.indexOf('/title/') > 0;
+    return netflix.page._url.indexOf('/title/') > 0;
   }
 
   netflix.page.isSearch = function() {
-    return url.indexOf('/search/') > 0;
+    return netflix.page._url.indexOf('/search/') > 0;
   };
 
   netflix.page.isSettings = function() {
     var settingPages = ['ManageProfiles', 'YourAccount', 'email', 'password', 'phonenumber', 'YourAccountPayment', 'BillingActivity', 'ChangePlan', 'Subscribe', 'EmailPreferences', 'pin', 'DoNotTest', 'Activate', 'ManageDevices', 'EditProfiles', 'LanguagePreferences', 'HdToggle', 'SubtitlePreferences', 'MyListOrder', 'viewingactivity', 'MoviesYouveSeen', 'Reviews'];
     for (var i = 0; i < settingPages.length; i++) {
-      if (url.indexOf('/'+settingPages[i]+'/') > 0)
+      if (netflix.page._url.indexOf('/'+settingPages[i]+'/') > 0)
         return true;
     }
 
     return false;
   };
+
+  // Location events
+  Eventable(netflix.page);
+  netflix.page.registerEvent('change', function() {
+    var changed = netflix.page._path != window.location.pathname;
+    
+    if (changed)
+      netflix.page._path = window.location.pathname;
+
+    return changed;
+  }).listen();
+  netflix.page.registerEvent('load', {element: window, event: 'load'}).listen();
 
   // Until functions
   /**
@@ -91,8 +115,7 @@ function Netflix(jq) {
    * Simulate clicking on element at given points and then moving mouse out
    */
   netflix.util.triggerClick = function(el, internalOffset) {
-    var offset = el.offset();
-    console.log(el.offset());
+    var offset = el.offset();    
 
     // Set defaults
     internalOffset   = $.isPlainObject(internalOffset) ? internalOffset   : {};
@@ -170,6 +193,11 @@ function Netflix(jq) {
         nextEpisodeButton: $('.player-control-button.player-next-episode'),
       }
     };
+
+    // Setup player events' condition
+    netflix.player.setCondition('play', {element: netflix._elements.video, event: 'playing'}).listen();
+    netflix.player.setCondition('pause', {element: netflix._elements.video, event: 'pause'}).listen();
+    netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
   };
 
   // Player Controls
@@ -299,6 +327,13 @@ function Netflix(jq) {
     return netflix.player.isFullscreen();
   };
 
+  // Player Events
+  Eventable(netflix.player);
+  // Player Event conditions are defined in player.setup()
+  netflix.player.registerEvent('ready');
+  netflix.player.registerEvent('play');
+  netflix.player.registerEvent('pause');
+  netflix.player.registerEvent('volumechange');
 
   // Player Information
   netflix.player.getId = function() {
@@ -333,12 +368,259 @@ function Netflix(jq) {
 
   };
 
-  netflix.setup();
+  netflix.page.on('load', function(event) {
+    console.log('load page');
+    netflix.setup();
+  });
+  netflix.page.on('change', function(event) {
+    console.log('change page');
+    netflix.setup();
+  });
+
 
   return netflix;
 }
-var test = 1;
-setTimeout(function() {
-plug = Netflix();
-plug.player.duration();
-}, 2000);
+
+function Eventable(element) {
+
+  /**
+   * registers a blank event if the given event does not exist
+   */
+  var defaultTheEvent = function(event) {
+    if (!eventExists(event))
+      element.registerEvent(event);
+  }
+
+  var eventExists = function(event) {
+    return element._events.hasOwnProperty(event);
+  }
+
+  element._events = {};
+
+  element.registerEvent = function(event, condition) {
+    if (eventExists(event))
+      element._events[event].setCondition(condition);
+    else
+      element._events[event] = CustomEvent(event, condition);
+
+    return element._events[event];
+  };
+
+  element.setCondition = function(event, condition) {
+    defaultTheEvent(event);
+
+    return element._events[event].setCondition(condition);
+  }
+
+  element.on = function(event, fn) {
+    defaultTheEvent(event);
+
+    return element._events[event].on(fn);
+  };
+
+  element.one = function(event, fn) {
+    defaultTheEvent(event);
+
+    return element._events[event].one(fn);
+  };
+
+  element.off = function(event, fn) {
+    if (eventExists(event))
+      return element._events[event].off(fn);
+    else
+      return false;
+  };
+
+  element.trigger = function(event, e) {
+    defaultTheEvent(event);
+    
+    return element._events[event].trigger(e);
+  };
+
+  element.listen = function(event) {
+    if (eventExists(event))
+      return element._events[event].listen();
+    else
+      return false;
+  };
+
+  element.kill = function(event) {
+    if (eventExists(event))
+      return element._events[event].kill();
+    else
+      return false;
+  };
+
+
+
+  /**
+   * Returns an object for handling custom made, locally managed events
+   *
+   */
+  function CustomEvent(name, condition) {
+    // set default condition
+    var defaultCondition = function() {return false;};
+    condition = condition ? condition : defaultCondition;
+
+    var event = {
+      name: name,
+      _condition: condition,
+      _intervalRate: 250,
+      _interval: false,
+      _handlers: [],
+    };
+
+    event.setCondition = function(condition) {
+      condition = condition ? condition : defaultCondition;
+      var listening = event.isListening();
+      
+      if (listening)
+        event.kill();
+      event._condition = condition;
+      if (listening)
+        event.listen();
+
+      return event;
+    };
+
+    /**
+     * Add a function to be fired when the event happens
+     *
+     * @param fn Function - the function to be fired
+     */
+    event.on = function(fn) {
+      
+      event._handlers.push(fn);
+
+      return fn;
+    };
+
+    /**
+     * Add a function to be fired once when the event happens
+     *
+     * @param fn Function - the function to be fired
+     */
+    event.one = function(fn) {
+      var removableFn = function(e) {
+        fn(e);
+        event.off(removableFn);
+      };
+
+      return event.on(removableFn);
+    };
+
+    /**
+     * Remove a function
+     *
+     * @param fn Function - the function to be removed
+     */
+    event.off = function(fn) {
+      // if no function is given remove all the event handlers
+      if (typeof fn == 'undefined') {
+        event._handlers = [];
+
+        return true;
+      }
+
+      // if its a function get the index of it and remove it
+      if($.isFunction(fn)) {
+        var index = event._handlers.indexOf(fn);
+        event._handlers.splice(index, 1);
+        return true;
+      }
+      
+      return false;
+    };
+
+    /**
+     * Fire the event 
+     *
+     * loop through the handlers and fire them with the event data passed in
+     * @param e - data to be passed to the handler
+     */
+    event.trigger = function(e) {
+      for (var index = 0; index < event._handlers.length; index++) {
+        event._handlers[index](e);
+      }
+
+      return true;
+    };
+
+    /**
+     * Listen for the event condition to be met
+     *
+     */
+    event.listen = function() {
+      // if its already listening return true
+      if (event.isListening())
+        return true;
+
+      // if the condition is a function for a custom event
+      if($.isFunction(event._condition)) {
+        event._interval = setInterval(function() {
+          var condition = event._condition();
+          if (condition != false)
+            event.trigger(condition);
+        }, event._intervalRate);
+
+        return true;
+      }
+      
+      // if the condition is an object for just wrapping an element's event
+      if($.isPlainObject(event._condition) 
+          && event._condition.hasOwnProperty('element') 
+          && event._condition.hasOwnProperty('event')) {
+
+        event._condition.method = function(e) {
+          event.trigger(e);
+        };
+
+        event._condition.element.addEventListener(event._condition.event, event._condition.method);
+        event._interval = true;
+
+        return true;
+      }
+
+      return false;
+    };
+
+    event.isListening = function() {
+      return event._interval != false;
+    }
+
+    /**
+     * Stop listening for the event condition
+     *
+     */
+    event.kill = function() {
+      // if the condition is a function for a custom event
+      if($.isFunction(event._condition)) {
+        clearInterval(event._interval);
+        
+        event._interval = false;
+        return true;
+      }
+
+      // if the condition is an object for just wrapping an element's event
+      if($.isPlainObject(event._condition) 
+          && event._condition.hasOwnProperty('element') 
+          && event._condition.hasOwnProperty('event')) {
+        event._condition.element.removeEventListener(event._condition.event, event._condition.method);
+        
+        event._interval = false;
+        return true;
+      }
+
+      return false;
+    };
+
+
+    return event;
+  }
+}
+
+n = Netflix();
+var one = n.player.on('volumechange', function(event) {console.log('one')});
+var two = n.player.on('volumechange', function(event) {console.log('two')});
+var three = n.player.on('volumechange', function(event) {console.log('three')});
+// n.player.off('volumechange');
