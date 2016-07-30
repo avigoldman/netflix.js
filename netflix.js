@@ -15,8 +15,9 @@ function Netflix(jq) {
     version: '0.1',
     // Pages
     page: {
+      _path: window.location.pathname,
       BROWSE: 'browse',
-      PLAYER: 'player',
+      PLAYER: 'watch',
       TITLE: 'title',
       SEARCH: 'search',
       SETTINGS: 'settings',
@@ -34,44 +35,59 @@ function Netflix(jq) {
 
   // Setup
   netflix.setup = function() {
-    // set up the elements
-    if (netflix.page.isPlayer()) {
-      alert('is player');
-      // netflix.player.setup();
+    switch (netflix.page.getPage()) {
+      case netflix.page.PLAYER:
+        netflix.player.setup();
+        break;
     }
   };
 
   // Location
-  netflix.page._path = window.location.pathname;
-
   netflix.page.getPage = function() {
-    if(netflix.page._url.indexOf('/browse/') > 0)
+    var page = netflix.page._path.substring(1);
+        page = page.substring(0, (page.indexOf('/') >= 0) ? page.indexOf('/') : page.length);
+    
+    var pages = [
+      netflix.page.BROWSE,
+      netflix.page.PLAYER,
+      netflix.page.TITLE,
+      netflix.page.SEARCH
+    ];
+
+    for (var i = 0; i < pages.length; i++) {
+      if (pages[i] == page)
+        return pages[i];
+    }
+
+    // Custom case to account for all the different settings pages
+    var settingPages = ['ManageProfiles', 'YourAccount', 'email', 'password', 'phonenumber', 'YourAccountPayment', 'BillingActivity', 'ChangePlan', 'Subscribe', 'EmailPreferences', 'pin', 'DoNotTest', 'Activate', 'ManageDevices', 'EditProfiles', 'LanguagePreferences', 'HdToggle', 'SubtitlePreferences', 'MyListOrder', 'viewingactivity', 'MoviesYouveSeen', 'Reviews'];
+    for (var i = 0; i < settingPages.length; i++) {
+      if (window.location.href.indexOf('/'+settingPages[i]+'/') > 0)
+        return netflix.page.SETTINGS;
+    }
+
+    // if page is not found return unknown
+    return netflix.page.UNKNOWN;
   };
 
   netflix.page.isBrowse = function() {
-    return netflix.page._url.indexOf('/browse/') > 0;
+    return netflix.page.getPage() == netflix.page.BROWSE;
   };
   
   netflix.page.isPlayer = function() {
-    return netflix.page._url.indexOf('/watch/') > 0;
+    return netflix.page.getPage() == netflix.page.PLAYER;
   };
 
   netflix.page.isTitle = function() {
-    return netflix.page._url.indexOf('/title/') > 0;
+    return netflix.page.getPage() == netflix.page.TITLE;
   }
 
   netflix.page.isSearch = function() {
-    return netflix.page._url.indexOf('/search/') > 0;
+    return netflix.page.getPage() == netflix.page.SEARCH;
   };
 
   netflix.page.isSettings = function() {
-    var settingPages = ['ManageProfiles', 'YourAccount', 'email', 'password', 'phonenumber', 'YourAccountPayment', 'BillingActivity', 'ChangePlan', 'Subscribe', 'EmailPreferences', 'pin', 'DoNotTest', 'Activate', 'ManageDevices', 'EditProfiles', 'LanguagePreferences', 'HdToggle', 'SubtitlePreferences', 'MyListOrder', 'viewingactivity', 'MoviesYouveSeen', 'Reviews'];
-    for (var i = 0; i < settingPages.length; i++) {
-      if (netflix.page._url.indexOf('/'+settingPages[i]+'/') > 0)
-        return true;
-    }
-
-    return false;
+    return netflix.page.getPage() == netflix.page.SETTINGS;
   };
 
   // Location events
@@ -175,29 +191,33 @@ function Netflix(jq) {
 
   // Player Setup
   netflix.player.setup = function() {
-    netflix._elements = {
-      video: $('#netflix-player video')[0],
-      playPauseButton: $('.player-control-button.player-play-pause'),
-      slider: {
-        timeLeft: $('section.player-slider > label'),
-        progressCompleted: $('.player-scrubber-progress-completed'),
-        bar: $('#scrubber-component'),
-      },
-      fullscreenButton: $('.player-control-button.player-fill-screen'),
-      volume: {
-        bar: $('#player-menu-volume > div > div'),
-        button: $('.player-control-button.volume'),
-      },
-      navigation: {
-        backToBrowseButton: $('#netflix-player > a.player-back-to-browsing'),
-        nextEpisodeButton: $('.player-control-button.player-next-episode'),
-      }
-    };
+    netflix.player.listen('ready');
+    
+    netflix.player.on('ready', function() {
+      netflix._elements = {
+        video: $('#netflix-player video')[0],
+        playPauseButton: $('.player-control-button.player-play-pause'),
+        slider: {
+          timeLeft: $('section.player-slider > label'),
+          progressCompleted: $('.player-scrubber-progress-completed'),
+          bar: $('#scrubber-component'),
+        },
+        fullscreenButton: $('.player-control-button.player-fill-screen'),
+        volume: {
+          bar: $('#player-menu-volume > div > div'),
+          button: $('.player-control-button.volume'),
+        },
+        navigation: {
+          backToBrowseButton: $('#netflix-player > a.player-back-to-browsing'),
+          nextEpisodeButton: $('.player-control-button.player-next-episode'),
+        }
+      };
 
-    // Setup player events' condition
-    netflix.player.setCondition('play', {element: netflix._elements.video, event: 'playing'}).listen();
-    netflix.player.setCondition('pause', {element: netflix._elements.video, event: 'pause'}).listen();
-    netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
+      // Setup player events' condition
+      netflix.player.setCondition('play', {element: netflix._elements.video, event: 'playing'}).listen();
+      netflix.player.setCondition('pause', {element: netflix._elements.video, event: 'pause'}).listen();
+      netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
+    });
   };
 
   // Player Controls
@@ -330,7 +350,9 @@ function Netflix(jq) {
   // Player Events
   Eventable(netflix.player);
   // Player Event conditions are defined in player.setup()
-  netflix.player.registerEvent('ready');
+  netflix.player.registerEvent('ready', function() {
+    return $("#netflix-player").length && $("#netflix-player .player-play-pause").length && $("#netflix-player video").length;
+  }, true);
   netflix.player.registerEvent('play');
   netflix.player.registerEvent('pause');
   netflix.player.registerEvent('volumechange');
@@ -369,11 +391,9 @@ function Netflix(jq) {
   };
 
   netflix.page.on('load', function(event) {
-    console.log('load page');
     netflix.setup();
   });
   netflix.page.on('change', function(event) {
-    console.log('change page');
     netflix.setup();
   });
 
@@ -397,11 +417,14 @@ function Eventable(element) {
 
   element._events = {};
 
-  element.registerEvent = function(event, condition) {
-    if (eventExists(event))
+  element.registerEvent = function(event, condition, single) {
+    if (eventExists(event)) {
       element._events[event].setCondition(condition);
-    else
-      element._events[event] = CustomEvent(event, condition);
+      element._events[event].setSingle(single);
+    }
+    else {
+      element._events[event] = CustomEvent(event, condition, single);
+    }
 
     return element._events[event];
   };
@@ -410,6 +433,12 @@ function Eventable(element) {
     defaultTheEvent(event);
 
     return element._events[event].setCondition(condition);
+  }
+
+  element.setSingle = function(event, single) {
+    defaultTheEvent(event);
+
+    return element._events[event].setSingle(single);
   }
 
   element.on = function(event, fn) {
@@ -457,21 +486,23 @@ function Eventable(element) {
    * Returns an object for handling custom made, locally managed events
    *
    */
-  function CustomEvent(name, condition) {
-    // set default condition
-    var defaultCondition = function() {return false;};
-    condition = condition ? condition : defaultCondition;
+  function CustomEvent(name, condition, single) {
 
     var event = {
       name: name,
-      _condition: condition,
+      _condition: null,
       _intervalRate: 250,
       _interval: false,
       _handlers: [],
+      _single: null
     };
 
+
     event.setCondition = function(condition) {
+      // set default condition
+      var defaultCondition = function() {return false;};
       condition = condition ? condition : defaultCondition;
+      
       var listening = event.isListening();
       
       if (listening)
@@ -481,6 +512,11 @@ function Eventable(element) {
         event.listen();
 
       return event;
+    };
+
+    event.setSingle = function(single) {
+      single = (typeof single !== 'undefined') ? single : false;
+      event._single = single;
     };
 
     /**
@@ -542,6 +578,10 @@ function Eventable(element) {
       for (var index = 0; index < event._handlers.length; index++) {
         event._handlers[index](e);
       }
+
+      // if the event should only be fired once then turn off listening
+      if (event._single)
+        event.kill();
 
       return true;
     };
@@ -614,6 +654,10 @@ function Eventable(element) {
       return false;
     };
 
+    // Set the condition and single from the params passed into the constructor using the above delcared functions
+    event.setCondition(condition);
+    event.setSingle(single);
+
 
     return event;
   }
@@ -623,4 +667,4 @@ n = Netflix();
 var one = n.player.on('volumechange', function(event) {console.log('one')});
 var two = n.player.on('volumechange', function(event) {console.log('two')});
 var three = n.player.on('volumechange', function(event) {console.log('three')});
-// n.player.off('volumechange');
+n.player.off('volumechange');
