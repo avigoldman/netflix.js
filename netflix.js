@@ -195,6 +195,7 @@ function Netflix(jq) {
     netflix.player.on('ready', function() {
       console.log('player ready');
       netflix._elements = {
+        player: $('#netflix-player'),
         video: $('#netflix-player video')[0],
         playPauseButton: $('.player-control-button.player-play-pause'),
         slider: {
@@ -218,10 +219,12 @@ function Netflix(jq) {
       netflix.player.setCondition('playing', {element: netflix._elements.video, event: 'playing'}).listen();
       netflix.player.setCondition('pause', {element: netflix._elements.video, event: 'pause'}).listen();
       netflix.player.setCondition('timeupdate', {element: netflix._elements.video, event: 'timeupdate'}).listen();
-      netflix.player.setCondition('seeking', {element: netflix._elements.video, event: 'seeking'}).listen();
       netflix.player.setCondition('seeked', {element: netflix._elements.video, event: 'seeked'}).listen();
       netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
       netflix.player.setCondition('ended', {element: netflix._elements.video, event: 'ended'}).listen();
+      netflix.player.setCondition('postplay', function() {
+        return netflix._elements.player.hasClass('player-postplay') && netflix._elements.player.hasClass('video-ended');
+      }).listen();
     });
 
     netflix.player.listen('ready');
@@ -237,10 +240,10 @@ function Netflix(jq) {
   netflix.player.registerEvent('playing');
   netflix.player.registerEvent('pause');
   netflix.player.registerEvent('timeupdate');
-  netflix.player.registerEvent('seeking');
   netflix.player.registerEvent('seeked');
   netflix.player.registerEvent('volumechange');
   netflix.player.registerEvent('ended');
+  netflix.player.registerEvent('postplay', function(){return false}, true);
 
   // Player Controls
   netflix.player.play = function() {
@@ -525,6 +528,8 @@ function Eventable(element) {
     event.setSingle = function(single) {
       single = (typeof single !== 'undefined') ? single : false;
       event._single = single;
+
+      return event;
     };
 
     /**
@@ -663,7 +668,7 @@ function Eventable(element) {
       return false;
     };
 
-    // Set the condition and single from the params passed into the constructor using the above delcared functions
+    // Set the condition and single from the params passe d into the constructor using the above delcared functions
     event.setCondition(condition);
     event.setSingle(single);
 
@@ -673,12 +678,8 @@ function Eventable(element) {
 
 n = Netflix();
 
-n.player.on('ready', function() {
-  setTimeout(function(){
-    n.player.pause();
-  }, 100);
 
-  setTimeout(function() {
-    console.log(n.player.volume(Math.random()));
-  }, 100);
+n.page.on('change', function() {
+  console.log('change');
 });
+
