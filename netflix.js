@@ -232,7 +232,7 @@ function Netflix(jq) {
       }).listen();
       netflix.player.setCondition('ended', {element: netflix._elements.video, event: 'ended'}).listen();
       netflix.player.setCondition('postplay', function() {
-        return netflix._elements.player.hasClass('player-postplay') && netflix._elements.player.hasClass('video-ended');
+        return netflix._elements.player.hasClass('player-postplay');
       }).listen();
       netflix.player.setCondition('seeked', {element: netflix._elements.video, event: 'seeked'}).listen();
       netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
@@ -379,35 +379,104 @@ function Netflix(jq) {
 
   // Player Information
   netflix.player.getId = function() {
-
+    return netflix.page._path.replace('/watch/', '');
   };
 
   netflix.player.getTitle = function() {
-
+     var label = $('#netflix-player span.player-status-main-title');
+         label = label.length > 0 ? label : $('#netflix-player h1.player-postplay-show-title');
+    return label.text();
   };
 
-  netflix.player.getDescription = function() {
-
+  netflix.player.isShow = function() {
+    return ($(".player-episode-selector").length > 0 && !$(".player-episode-selector").hasClass('player-hidden')) || $(".player-postplay-show-autoplay").length > 0
   };
 
-  netflix.player.getType = function() {
-
+  netflix.player.isMovie = function() {
+    return !netflix.player.isShow();
   };
 
   netflix.player.getSeason = function() {
+    if (netflix.player.isShow()) {
+      var label = $('#netflix-player div.playback-longpause-container .content h3:nth-child(3)');
 
+      var regex = /Season (\d+): Ep. (\d+)/;
+
+
+      return (label.length > 0) ? regex.exec(label.text())[1] : null;
+    }
+    else {
+      return null;
+    }
   };
 
   netflix.player.getEpisode = function() {
+    if (netflix.player.isShow()) {
+      var label = $('#netflix-player div.playback-longpause-container .content h3:nth-child(3)');
 
+      var regex = /Season (\d+): Ep. (\d+)/;
+
+
+      return (label.length > 0) ? regex.exec(label.text())[2] : null;
+    }
+    else {
+      return null;
+    }
   };
 
   netflix.player.getEpisodeTitle = function() {
+    if (netflix.player.isShow()) {
+      var label = $('#netflix-player div.playback-longpause-container .content h3:nth-child(4)');
 
+      return (label.length > 0) ? label.text() : null;
+    }
+    else {
+      return null;
+    }
   };
 
   netflix.player.getEpisodeDescription = function() {
+    if (netflix.player.isShow()) { 
+      var label = $('#netflix-player div.playback-longpause-container .content p').last();
 
+      return (label.length > 0) ? label.text() : null;
+    }
+    else {
+      return null;
+    }
+  };
+
+  netflix.player.getMovieDescription = function() {
+    if (netflix.player.isMovie()) {
+      var label = $('#netflix-player div.playback-longpause-container .content p').last();
+
+      return (label.length > 0) ? label.text() : null;
+    }
+    else {
+      return null;
+    }
+  };
+
+  netflix.player.getMovieRating = function() {
+    if (netflix.player.isMovie()) {
+      var label = $('#netflix-player div.playback-longpause-container .content h3 span:nth-child(2)');
+
+      return (label.length > 0) ? label.text() : null;
+    }
+    else {
+      return null;
+    }
+  };
+
+  netflix.player.getMovieYear = function() {
+    if (netflix.player.isMovie()) {
+      var label = $('#netflix-player div.playback-longpause-container .content h3 span:nth-child(1)');
+
+      return (label.length > 0) ? label.text() : null;
+    }
+    else {
+      return null;
+    }
   };
 
   netflix.page.on('load', function(event) {
@@ -687,6 +756,28 @@ function Eventable(element) {
 
 n = Netflix();
 
-n.player.on('buffering', function() {
-  console.log('buffering');
+var fn = function() {
+  console.log("ID:" + n.player.getId());
+  console.log("Title:" + n.player.getTitle());
+  console.log("Is show:" + n.player.isShow());
+  console.log("Is movie:" + n.player.isMovie());
+  console.log("Season:" + n.player.getSeason());
+  console.log("Episode:" + n.player.getEpisode());
+  console.log("Episode Title:" + n.player.getEpisodeTitle());
+  console.log("Episode Description:" + n.player.getEpisodeDescription());
+  console.log("Movie Description:" + n.player.getMovieDescription());
+  console.log("Movie Rating:" + n.player.getMovieRating());
+  console.log("Movie Year:" + n.player.getMovieYear());
+};
+
+n.player.on('ready', fn);
+
+n.player.on('postplay', function() {
+  console.log('postplay');
 });
+
+n.player.on('ended', function() {
+  console.log('ended');
+});
+
+
