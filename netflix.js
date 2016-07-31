@@ -191,9 +191,9 @@ function Netflix(jq) {
 
   // Player Setup
   netflix.player.setup = function() {
-    netflix.player.listen('ready');
     
     netflix.player.on('ready', function() {
+      console.log('player ready');
       netflix._elements = {
         video: $('#netflix-player video')[0],
         playPauseButton: $('.player-control-button.player-play-pause'),
@@ -214,11 +214,33 @@ function Netflix(jq) {
       };
 
       // Setup player events' condition
-      netflix.player.setCondition('play', {element: netflix._elements.video, event: 'playing'}).listen();
+      netflix.player.setCondition('play', {element: netflix._elements.video, event: 'play'}).listen();
+      netflix.player.setCondition('playing', {element: netflix._elements.video, event: 'playing'}).listen();
       netflix.player.setCondition('pause', {element: netflix._elements.video, event: 'pause'}).listen();
+      netflix.player.setCondition('timeupdate', {element: netflix._elements.video, event: 'timeupdate'}).listen();
+      netflix.player.setCondition('seeking', {element: netflix._elements.video, event: 'seeking'}).listen();
+      netflix.player.setCondition('seeked', {element: netflix._elements.video, event: 'seeked'}).listen();
       netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
+      netflix.player.setCondition('ended', {element: netflix._elements.video, event: 'ended'}).listen();
     });
+
+    netflix.player.listen('ready');
   };
+
+  // Player Events
+  Eventable(netflix.player);
+  // Player Event conditions are defined in player.setup()
+  netflix.player.registerEvent('ready', function() {
+    return $("#netflix-player").length && $("#netflix-player .player-play-pause").length && $("#netflix-player video").length;
+  }, true);
+  netflix.player.registerEvent('play');
+  netflix.player.registerEvent('playing');
+  netflix.player.registerEvent('pause');
+  netflix.player.registerEvent('timeupdate');
+  netflix.player.registerEvent('seeking');
+  netflix.player.registerEvent('seeked');
+  netflix.player.registerEvent('volumechange');
+  netflix.player.registerEvent('ended');
 
   // Player Controls
   netflix.player.play = function() {
@@ -304,16 +326,12 @@ function Netflix(jq) {
       // add a ceil of 1 and a floor of 0
       volume = (volume < 0) ? 0 : ((volume > 1) ? 1 : volume);
 
-      netflix.util.jiggleMouse(netflix._elements.volume.button);
+      netflix.util.triggerHover(netflix._elements.volume.button);
       setTimeout(function() {
-        netflix.util.triggerHover(netflix._elements.volume.button);
-      
-        setTimeout(function() {
-          var pixelsInBar = netflix._elements.volume.bar.height();
-          var pixels = pixelsInBar - volume * pixelsInBar;
-          netflix.util.triggerClick(netflix._elements.volume.bar, {y: pixels});
-        }, 0);
-      }, 0);
+        var pixelsInBar = netflix._elements.volume.bar.height();
+        var pixels = pixelsInBar - volume * pixelsInBar; // calculate offset from top
+        netflix.util.triggerClick(netflix._elements.volume.bar, {y: pixels});
+      }, 100);
 
       return volume;
     }
@@ -346,16 +364,6 @@ function Netflix(jq) {
     netflix._elements.fullscreenButton.click();
     return netflix.player.isFullscreen();
   };
-
-  // Player Events
-  Eventable(netflix.player);
-  // Player Event conditions are defined in player.setup()
-  netflix.player.registerEvent('ready', function() {
-    return $("#netflix-player").length && $("#netflix-player .player-play-pause").length && $("#netflix-player video").length;
-  }, true);
-  netflix.player.registerEvent('play');
-  netflix.player.registerEvent('pause');
-  netflix.player.registerEvent('volumechange');
 
   // Player Information
   netflix.player.getId = function() {
@@ -575,13 +583,14 @@ function Eventable(element) {
      * @param e - data to be passed to the handler
      */
     event.trigger = function(e) {
-      for (var index = 0; index < event._handlers.length; index++) {
-        event._handlers[index](e);
+      // if the event should only be fired once then turn off listening
+      if (event._single) {
+        event.kill();
       }
 
-      // if the event should only be fired once then turn off listening
-      if (event._single)
-        event.kill();
+      for (var index = event._handlers.length - 1; index >= 0; index--) {
+        event._handlers[index](e);
+      }
 
       return true;
     };
@@ -658,13 +667,18 @@ function Eventable(element) {
     event.setCondition(condition);
     event.setSingle(single);
 
-
     return event;
   }
 }
 
 n = Netflix();
-var one = n.player.on('volumechange', function(event) {console.log('one')});
-var two = n.player.on('volumechange', function(event) {console.log('two')});
-var three = n.player.on('volumechange', function(event) {console.log('three')});
-n.player.off('volumechange');
+
+n.player.on('ready', function() {
+  setTimeout(function(){
+    n.player.pause();
+  }, 100);
+
+  setTimeout(function() {
+    console.log(n.player.volume(Math.random()));
+  }, 100);
+});
