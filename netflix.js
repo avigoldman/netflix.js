@@ -207,10 +207,6 @@ function Netflix(jq) {
         volume: {
           bar: $('#player-menu-volume > div > div'),
           button: $('.player-control-button.volume'),
-        },
-        navigation: {
-          backToBrowseButton: $('#netflix-player > a.player-back-to-browsing'),
-          nextEpisodeButton: $('.player-control-button.player-next-episode'),
         }
       };
 
@@ -219,12 +215,27 @@ function Netflix(jq) {
       netflix.player.setCondition('playing', {element: netflix._elements.video, event: 'playing'}).listen();
       netflix.player.setCondition('pause', {element: netflix._elements.video, event: 'pause'}).listen();
       netflix.player.setCondition('timeupdate', {element: netflix._elements.video, event: 'timeupdate'}).listen();
-      netflix.player.setCondition('seeked', {element: netflix._elements.video, event: 'seeked'}).listen();
-      netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
+      netflix.player.setCondition('buffering', function() {
+        if (!netflix.player.isBuffering())
+          netflix.player._buffered = false;
+
+        // only buffer once per buffer session
+        if (netflix.player.isBuffering()
+            && netflix.player._buffered == false) {
+
+          netflix.player._buffered = true;
+
+          return true;
+        }
+
+        return false;
+      }).listen();
       netflix.player.setCondition('ended', {element: netflix._elements.video, event: 'ended'}).listen();
       netflix.player.setCondition('postplay', function() {
         return netflix._elements.player.hasClass('player-postplay') && netflix._elements.player.hasClass('video-ended');
       }).listen();
+      netflix.player.setCondition('seeked', {element: netflix._elements.video, event: 'seeked'}).listen();
+      netflix.player.setCondition('volumechange', {element: netflix._elements.video, event: 'volumechange'}).listen();
     });
 
     netflix.player.listen('ready');
@@ -240,10 +251,11 @@ function Netflix(jq) {
   netflix.player.registerEvent('playing');
   netflix.player.registerEvent('pause');
   netflix.player.registerEvent('timeupdate');
-  netflix.player.registerEvent('seeked');
-  netflix.player.registerEvent('volumechange');
+  netflix.player.registerEvent('buffering');
   netflix.player.registerEvent('ended');
   netflix.player.registerEvent('postplay', function(){return false}, true);
+  netflix.player.registerEvent('seeked');
+  netflix.player.registerEvent('volumechange');
 
   // Player Controls
   netflix.player.play = function() {
@@ -342,21 +354,18 @@ function Netflix(jq) {
     return netflix._elements.video.volume;
   };
 
-  // TODO
-  netflix.player.previousEpisode = function() {
-
-  };
-
   netflix.player.nextEpisode = function() {
-    if (!netflix._elements.navigation.nextEpisodeButton.hasClass('player-hidden')) {
-      netflix._elements.navigation.nextEpisodeButton.click();
-      return true;
-    }
-    return false;
+    var button = $('.player-control-button.player-next-episode');
+        button = button.length > 0 ? button : $('.postplay-still-container.uitracking-state-visible');
+
+    netflix.util.triggerClick(button);
   };
 
   netflix.player.backToBrowse = function() {
-    netflix._elements.navigation.backToBrowseButton.click();
+    var button = $('#netflix-player > a.player-back-to-browsing');
+        button = button.length > 0 ? button : $('.button.back-to-browsing');
+
+    netflix.util.triggerClick(button);
   };
 
   netflix.player.isFullscreen = function() {
@@ -678,8 +687,6 @@ function Eventable(element) {
 
 n = Netflix();
 
-
-n.page.on('change', function() {
-  console.log('change');
+n.player.on('buffering', function() {
+  console.log('buffering');
 });
-
