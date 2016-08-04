@@ -12,7 +12,7 @@ function Netflix(jq) {
 
   var netflix = {
     // Constants
-    version: '0.1',
+    _version: '0.2',
     // Pages
     page: {
       _path: window.location.pathname,
@@ -40,6 +40,12 @@ function Netflix(jq) {
         netflix.player.setup();
         break;
     }
+  };
+
+  // Netflix.js functions
+
+  netflix.getVersion = function() {
+    return netflix._version;
   };
 
   // Location
@@ -261,17 +267,13 @@ function Netflix(jq) {
   netflix.player.play = function() {
       if (netflix.player.isPaused()) {
         netflix._elements.playPauseButton.click();
-        return true;
       }
-      return false;
   };
 
   netflix.player.pause = function() {
     if (netflix.player.isPlaying()) {
       netflix._elements.playPauseButton.click();
-      return true;
     }
-    return false;
   };
 
   netflix.player.isPlaying = function() {
@@ -292,32 +294,29 @@ function Netflix(jq) {
     return $("#player-playback-buffering").hasClass('player-active');
   };
 
-  netflix.player.seek = function(seconds) {
+  netflix.player.seekTo = function(seconds) {
     if (netflix.page.isPlayer()) {
-      netflix.util.jiggleMouse(netflix._elements.slider.bar);
-      var pixelsPerSeconds = netflix._elements.slider.bar.width()/netflix.player.duration();
-      var pixels = seconds * pixelsPerSeconds;
-      setTimeout(function() {
-        netflix.util.triggerClick(netflix._elements.slider.bar, {x: pixels});
-      }, 0);
-
-      return netflix.player.currentTime();
+      if (typeof seconds !== "undefined") {
+        netflix.util.jiggleMouse(netflix._elements.slider.bar);
+        var pixelsPerSeconds = netflix._elements.slider.bar.width()/netflix.player.getDuration();
+        var pixels = seconds * pixelsPerSeconds;
+        setTimeout(function() {
+          netflix.util.triggerClick(netflix._elements.slider.bar, {x: pixels});
+        }, 0);
+      }
     }
   };
 
-  netflix.player.currentTime = function(seconds) {
-    if (typeof seconds !== "undefined")
-      return netflix.player.seek(seconds);
-    else
+  netflix.player.getCurrentTime = function() {
       return netflix._elements.video.currentTime;
   };
 
-  netflix.player.duration = function() {
+  netflix.player.getDuration = function() {
     return netflix._elements.video.duration;
   };
 
   netflix.player.isMuted = function() {
-    return netflix.player.volume() == 0;
+    return netflix.player.getVolume() == 0;
   };
 
   netflix.player.mute = function() {
@@ -328,7 +327,7 @@ function Netflix(jq) {
     return false;
   };
 
-  netflix.player.unmute = function() {
+  netflix.player.unMute = function() {
     if (netflix.player.isMuted()) {
       netflix.util.triggerClick(netflix._elements.volume.button);
       return true;
@@ -336,7 +335,11 @@ function Netflix(jq) {
     return false;
   };
 
-  netflix.player.volume = function(volume) {
+  netflix.player.getVolume = function() {
+    return netflix._elements.video.volume;
+  };
+
+  netflix.player.setVolume = function(volume) {
     if (typeof volume !== "undefined") {
       // add a ceil of 1 and a floor of 0
       volume = (volume < 0) ? 0 : ((volume > 1) ? 1 : volume);
@@ -347,11 +350,7 @@ function Netflix(jq) {
         var pixels = pixelsInBar - volume * pixelsInBar; // calculate offset from top
         netflix.util.triggerClick(netflix._elements.volume.bar, {y: pixels});
       }, 100);
-
-      return volume;
     }
-        
-    return netflix._elements.video.volume;
   };
 
   netflix.player.nextEpisode = function() {
@@ -403,7 +402,7 @@ function Netflix(jq) {
       var regex = /Season (\d+): Ep. (\d+)/;
 
 
-      return (label.length > 0) ? regex.exec(label.text())[1] : null;
+      return (label.length > 0) ? parseInt(regex.exec(label.text())[1]) : null;
     }
     else {
       return null;
@@ -417,7 +416,7 @@ function Netflix(jq) {
       var regex = /Season (\d+): Ep. (\d+)/;
 
 
-      return (label.length > 0) ? regex.exec(label.text())[2] : null;
+      return (label.length > 0) ? parseInt(regex.exec(label.text())[2]) : null;
     }
     else {
       return null;
@@ -652,6 +651,10 @@ function Eventable(element) {
       // if its a function get the index of it and remove it
       if($.isFunction(fn)) {
         var index = event._handlers.indexOf(fn);
+
+        if (index < 0)
+          return false;
+
         event._handlers.splice(index, 1);
         return true;
       }
@@ -753,31 +756,5 @@ function Eventable(element) {
     return event;
   }
 }
-
-n = Netflix();
-
-var fn = function() {
-  console.log("ID:" + n.player.getId());
-  console.log("Title:" + n.player.getTitle());
-  console.log("Is show:" + n.player.isShow());
-  console.log("Is movie:" + n.player.isMovie());
-  console.log("Season:" + n.player.getSeason());
-  console.log("Episode:" + n.player.getEpisode());
-  console.log("Episode Title:" + n.player.getEpisodeTitle());
-  console.log("Episode Description:" + n.player.getEpisodeDescription());
-  console.log("Movie Description:" + n.player.getMovieDescription());
-  console.log("Movie Rating:" + n.player.getMovieRating());
-  console.log("Movie Year:" + n.player.getMovieYear());
-};
-
-n.player.on('ready', fn);
-
-n.player.on('postplay', function() {
-  console.log('postplay');
-});
-
-n.player.on('ended', function() {
-  console.log('ended');
-});
 
 
