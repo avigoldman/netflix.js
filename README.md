@@ -54,16 +54,27 @@ Next, add both scripts to your content scripts array in `manifest.json`.
   "content_scripts": [
     {
       "matches": ["*://www.netflix.com/*"],
-      "js": ["js/jquery.js", "js/netflix.js"]
+      "js": ["js/jquery.js", "js/netflix.js", "js/script.js"]
     }
   ]
 }
 
 ```
 
-And now you're good to go!
+In your `js/script.js` call the `Netflix` function
 
-To see a bare-bones extension using netflix.js checkout the `example` directory.
+```javascript
+jQuery.noConflict();
+(function($) {
+
+var flix = Netflix($);
+
+// add your code here
+
+})(jQuery);
+```
+
+And now you're good to go!
 
 ## Page
 
