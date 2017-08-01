@@ -122,27 +122,27 @@ Removes the specified handler or all handlers if none is given for the event. Re
 ### Methods
 
 #### `flix.player.play():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Plays the video.
 
 #### `flix.player.pause():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Pauses the video.
 
 #### `flix.player.isPlaying():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns `true` if the video is playing, `false` if not.
 
 #### `flix.player.isPaused():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns `true` if the video is paused, `false` if not.
 
 #### `flix.player.isBuffering():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns `true` if the video is buffering, `false` if not.
 
 #### `flix.player.seekTo(seconds:Number):Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Seeks to the specified time in seconds in the video. Note: the video maintains its state (i.e. if it was paused it says paused).
 
 #### `flix.player.getCurrentTime():Number`
@@ -155,18 +155,18 @@ Returns the number of seconds in the video.
 Returns `true` if the video is muted, `false` if not.
 
 #### `flix.player.mute():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Mutes the player.
 
 #### `flix.player.unMute():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Unmutes the palyer.
 
 #### `flix.player.getVolume():Float`
 Returns the player's volume which is a float between `0` and `1`.
 
 #### `flix.player.setVolume(volume:Float):Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 **Note: This function is still fairly buggy. Use with caution.**
 Sets the player's volume to a Float between `0` and `1`.
 
@@ -177,11 +177,11 @@ Navigates the page to the next episode. If the current episode is the last episo
 Navigates to last browsing page.
 
 #### `flix.player.isFullscreen():Boolean`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns `true` if the player is fullscreen, `false` if not.
 
 #### `flix.player.toggleFullscreen():Void`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 If the player is normal sized it grows to fullscreen, otherwise it exits fullscreen.
 
 #### `flix.player.getId():String`
@@ -197,31 +197,31 @@ Returns `true` if the current video is part of a show, `false` if not.
 Returns `true` if the current video is not part of a show, `false` if not.
 
 #### `flix.player.getSeason():Number`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns the season the current video is in if the video is part of a show, `null` if not.
 
 #### `flix.player.getEpisode():Number`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns the current video's episode number if it is part of a show, `null` if not.
 
 #### `flix.player.getEpisodeTitle():String`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns current video's episode title if it is part of a show, `null` if not.
 
 #### `flix.player.getEpisodeDescription():String`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns current video's episode description if it is part of a show, `null` if not.
 
 #### `flix.player.getMovieDescription():String`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns current video's movie description if it is not part of a show, `null` if it is.
 
 #### `flix.player.getMovieRating():String`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns current video's movie rating if it is not part of a show, `null` if it is.
 
 #### `flix.player.getMovieYear():String`
-######*Available from `ready` event to `postplay` event.*
+###### *Available from `ready` event to `postplay` event.*
 Returns current video's movie publishing year if it is not part of a show, `null` if it is.
 
 #### `flix.player.on(event:String, handler:Function):Function`
