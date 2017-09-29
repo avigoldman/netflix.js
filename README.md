@@ -11,8 +11,7 @@ If you want to just test out the library you can copy the following snippet into
 ```javascript
 var head = document.getElementsByTagName('head')[0];
 
-var jquery
-Script = document.createElement('script');
+var jqueryScript = document.createElement('script');
 jqueryScript.src = 'https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js';
 
 var netflixScript = document.createElement('script');
